@@ -12,19 +12,32 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
+  "https://mern-ai-chatbot-theta.vercel.app",
   process.env.FRONTEND_URL // ✅ use env for production
-];
+].filter(Boolean); // Remove any undefined values
 
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = "CORS policy does not allow this origin.";
-      return callback(new Error(msg), false);
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
     }
-    return callback(null, true);
+    
+    // Allow Vercel preview deployments (any *.vercel.app domain)
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Reject other origins
+    const msg = "CORS policy does not allow this origin.";
+    return callback(new Error(msg), false);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.use(cors(corsOptions));
